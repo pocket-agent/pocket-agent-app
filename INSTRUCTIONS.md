@@ -1,43 +1,71 @@
-# Agent instructions — pocket-agent-api-app
+# Agent & developer instructions — pocket-agent-app
 
-**Scope:** Hono Cloudflare Worker only. Global rules: [../INSTRUCTIONS.md](../INSTRUCTIONS.md).
+**pocket-agent-app** — fullstack **Hono + React** monorepo on Cloudflare Workers. Dashboard UI and OAuth worker share one origin in dev (`:5173`).
 
-## Responsibilities
+## What ships out of the box
 
-- Verify Google ID tokens (`GOOGLE_CLIENT_ID`)
-- CORS for web origins (`ALLOWED_ORIGINS`)
-- Proxy `/chat` and status to Pocket Node (`POCKET_NODE_URL`)
+| Surface | Route / area | Description |
+|---------|----------------|-------------|
+| `GET /health` | API | Liveness |
+| `GET /status` | API | Worker + agent status |
+| `/auth`, `/me`, `/chat`, `/settings` | API | Secured; chat proxies Pocket Node |
+| React app | `src/app/` | Chat, monitor, settings, OAuth |
 
-## Shared types
+Details: [`index.md`](index.md) · Feature specs: [`specs/`](specs/)
 
-API envelopes and service IDs come from **`pocket-agent-sdk`**. Worker-specific types (`Env`, `Variables`, `GoogleUser`) stay in `src/types/`.
+## Key modules
 
-## Local dev
+| Area | Path |
+|------|------|
+| Worker entry | `src/api-server/index.ts` |
+| Middleware | `src/api-server/middleware/` |
+| Pocket Node proxy | `src/api-server/lib/pocket-node.ts` |
+| React app | `src/app/App.tsx` |
+| API client | `src/app/api/api.ts` |
+| Vite config | `vite.config.ts` |
+| Deploy | `wrangler.toml`, `docs/DEPLOYMENT.md` |
+
+## Layout
+
+| Alias | Path |
+|-------|------|
+| `@/` | `src/app/` |
+| `@api-server/` | `src/api-server/` |
+
+## Shared contracts
+
+Depends on `pocket-agent-sdk` (`file:../pocket-agent-sdk`). Update SDK when API shapes or auth modes change.
+
+## Do not duplicate here
+
+| Concern | Repo |
+|---------|------|
+| Pocket Node / LLM | `../pocket-agent/` |
+| Workspace bootstrap | `../pocket-agent/` CLI + `../config/modules.yaml` |
+
+## Local development
 
 ```bash
-cd ../pocket-agent-sdk && npm run build
-cp .env.example .dev.vars
-npm install
-npm run dev
+cp .env.example .env.local && cp .dev.vars.example .dev.vars
+bun install && bun run dev
 ```
 
-Default `POCKET_NODE_URL=http://127.0.0.1:8787` — run `pocket-agent serve` in `../pocket-agent`.
-
-## Source layout
-
-```
-src/
-  index.ts      # Hono app entry
-  routes/       # health, auth, me, chat, status
-```
-
-## Do not add here
-
-- LLM calls (stay on Pocket Node)
-- React UI → `../pocket-agent-web-app/`
-- Shared response types → `../pocket-agent-sdk/`
-- Python tools → `../pocket-agent/`
+Terminal 1: `pocket-agent serve` in `../pocket-agent`.
 
 ## Deploy
 
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+```bash
+bun run deploy:production
+```
+
+Set secrets per [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Agent checklist
+
+1. Read [index.md](index.md) and [specs/FEATURES.md](specs/FEATURES.md).
+2. Keep worker env (`.dev.vars`) and Vite env (`.env.local`) in sync for auth mode.
+3. Add new API paths to `run_worker_first` in `wrangler.toml`.
+
+## Repository documents
+
+[README](README.md) | **INSTRUCTIONS** | [CHANGELOG](CHANGELOG.md) | [CONTRIBUTING](CONTRIBUTING.md) | [SECURITY](SECURITY.md) | [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)

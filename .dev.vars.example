@@ -1,0 +1,6 @@
+# Wrangler worker vars — copied to .dev.vars by pocket-agent bootstrap
+AUTH_MODE=none
+# GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+ENVIRONMENT=development
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+POCKET_NODE_URL=http://127.0.0.1:8787

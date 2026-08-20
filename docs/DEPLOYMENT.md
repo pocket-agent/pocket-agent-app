@@ -1,60 +1,31 @@
-# Pocket Agent API — Cloudflare Workers deployment
+# Deployment — pocket-agent-app
 
-Hono worker: Google JWT verification + proxy to Pocket Node.
+Single Cloudflare Worker deploy serves both the Hono API and the React SPA (`[assets]` + `run_worker_first`).
 
 ## Prerequisites
 
-- Cloudflare account
-- `wrangler login` or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` for CI
-- Google OAuth client ID (same as `pocket-agent-web-app`)
-- Pocket Node at a URL (local or Cloudflare Tunnel)
+- Cloudflare account and `wrangler login`
+- Google OAuth client ID (when `AUTH_MODE=google`)
+- Pocket Node reachable from the worker (Cloudflare Tunnel URL or public agent URL)
 
-## Secrets (production)
+## Production secrets
 
 ```bash
+bun run build
 wrangler secret put GOOGLE_CLIENT_ID --env production
 wrangler secret put POCKET_NODE_URL --env production
 wrangler secret put ALLOWED_ORIGINS --env production
+bun run deploy:production
 ```
 
-| Secret | Example |
-|--------|---------|
-| `GOOGLE_CLIENT_ID` | Google Cloud OAuth client ID |
-| `POCKET_NODE_URL` | `https://agent.yourdomain.com` (tunnel to `:8787`) |
-| `ALLOWED_ORIGINS` | `https://your-pages.pages.dev` |
+Set `ALLOWED_ORIGINS` to your workers.dev or custom domain (e.g. `https://pocket-agent.pages.dev`).
 
-## Pocket Node + Tunnel
+## Staging
 
 ```bash
-cd ../core && pocket-agent serve
-cloudflared tunnel --url http://127.0.0.1:8787
+bun run deploy:staging
 ```
-
-Use tunnel HTTPS URL as `POCKET_NODE_URL`.
-
-Flow: **Web (Pages)** → **Worker** → **Tunnel** → **Pocket Node**
-
-## Deploy manually
-
-```bash
-npm ci
-npm run type-check
-wrangler deploy --env production
-```
-
-## CI
-
-`.github/workflows/` in this repo.
 
 ## Local dev
 
-```bash
-cp .env.example .dev.vars
-npm run dev
-```
-
-## Related
-
-- [../docs/APPS_ARCHITECTURE.md](../docs/APPS_ARCHITECTURE.md)
-- [../docs/GOOGLE_OAUTH.md](../docs/GOOGLE_OAUTH.md)
-- [../pocket-agent-web-app/docs/DEPLOYMENT.md](../pocket-agent-web-app/docs/DEPLOYMENT.md)
+Same-origin API on port 5173 — no separate worker port. Pocket Node must run on `:8787` (see root `README.md`).

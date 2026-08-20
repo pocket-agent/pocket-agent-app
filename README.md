@@ -1,92 +1,109 @@
 <img src=".github/pocket-agent-image.png" width="200" alt="Pocket Agent" align="left"/>
 
 <div>
-<h3>Pocket Agent API</h3>
+<h3>pocket-agent-app</h3>
 <p>
-Hono <strong>Cloudflare Worker</strong> for Pocket Agent — validates Google OAuth ID tokens (or optional local auth bypass) and proxies chat and profile requests to the Pocket Node on your machine.
+<strong>Pocket Agent fullstack app</strong> — React dashboard and Hono API on <strong>Cloudflare Workers</strong> in one monorepo. Google OAuth (or local bypass) on the worker; chat and settings proxied to Pocket Node.
 </p>
-<a href="https://github.com/pocket-agent/pocket-agent-desktop-app/releases"><img src="https://img.shields.io/badge/Download%20for%20macOS-007ec6?style=flat-square&logo=apple" width="175" alt="Download for macOS"/></a>
+<a href="https://pocket-agent.pages.dev/"><img src="https://img.shields.io/badge/LIVE_DEMO-007ec6?style=flat-square&logo=cloudflare&logoColor=white" width="175" alt="Live demo"/></a>
 </div>
 
 <br/><br/>
 
 <div align="center">
 
-[![Release](https://img.shields.io/github/v/release/pocket-agent/pocket-agent-api-app)](https://github.com/pocket-agent/pocket-agent-api-app/releases)
-[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/pocket-agent/pocket-agent-api-app/blob/main/LICENSE)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-blue)](https://github.com/pocket-agent/pocket-agent-api-app)
-[![CI](https://github.com/pocket-agent/pocket-agent-api-app/actions/workflows/ci.yml/badge.svg)](https://github.com/pocket-agent/pocket-agent-api-app/actions/workflows/ci.yml)
+[![CI](https://github.com/pocket-agent/pocket-agent-app/actions/workflows/ci.yml/badge.svg)](https://github.com/pocket-agent/pocket-agent-app/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/pocket-agent/pocket-agent-app/blob/main/LICENSE)
+[![Stack](https://img.shields.io/badge/Stack-Hono%20%2B%20React-646cff)](https://github.com/pocket-agent/pocket-agent-app)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 
 <br/>
 <br/>
 
-<img src=".github/screenshot.png" width="824" alt="Pocket Agent" style="border-radius: 5px;"/><br/>
+<img src=".github/screenshot.png" width="824" alt="Pocket Agent dashboard" style="border-radius: 5px;"/><br/>
+
+**Chat · Monitor · Settings · OAuth**
 
 </div>
 
 <hr>
 
-## Features
+## Layout
 
-| Route | Auth | Description |
-|-------|------|-------------|
-| `GET /health` | No | Liveness |
-| `GET /status` | No | Worker + Pocket Node reachability |
-| `GET /auth` | Google JWT | Token validation |
-| `GET /me` | Google JWT | Profile from claims |
-| `POST /chat` | Google JWT | Proxy to Pocket Node |
+Same pattern as [dropafile](https://github.com/dropafile/dropafile) — one Vite dev server, worker-first API routes, SPA assets.
 
-- Response envelopes from `pocket-agent-sdk`
-- CORS via `ALLOWED_ORIGINS`
-- Local dev with `wrangler dev` on `:8788`
-- Bundled inside the desktop app for offline-local use
+```text
+src/
+├── api-server/   # Hono Cloudflare Worker (auth, /chat, /me, /health)
+└── app/          # React SPA (dashboard UI)
+index.html        → /src/app/main.tsx
+wrangler.toml     → main = src/api-server/index.ts
+```
 
-## Requirements
+| Layer | Tech |
+|-------|------|
+| **Edge API** | Hono · Google JWT · proxy to Pocket Node |
+| **Web app** | React · Vite · shadcn/ui |
+| **Contracts** | [`pocket-agent-sdk`](../pocket-agent-sdk) |
 
-- **Node 20+** and npm
-- **Wrangler** for local worker dev
-- Pocket Node at `POCKET_NODE_URL` (default `http://127.0.0.1:8787`)
+## Prerequisites
 
-## Install
-
-Shipped inside the **Pocket Agent** macOS app, or run locally beside Pocket Node for browser dev.
+- [Bun](https://bun.sh) or Node 20+
+- Pocket Node running at `http://127.0.0.1:8787` ([`pocket-agent`](../pocket-agent))
 
 ## Quick start
 
 ```bash
-cd ../pocket-agent-sdk && npm run build
-cp .env.example .dev.vars
-npm install
-npm run dev
+git clone https://github.com/pocket-agent/pocket-agent-app.git
+cd pocket-agent-app
+cp .env.example .env.local
+cp .dev.vars.example .dev.vars
+bun install
+bun run dev
 ```
 
-Set `GOOGLE_CLIENT_ID` and `POCKET_NODE_URL`. Run `pocket-agent serve` in [pocket-agent](https://github.com/pocket-agent/pocket-agent).
+Open **http://localhost:5173** — UI and API share the same origin (`/health`, `/chat`, …).
 
-Pair with [pocket-agent-web-app](https://github.com/pocket-agent/pocket-agent-web-app) or [pocket-agent-desktop-app](https://github.com/pocket-agent/pocket-agent-desktop-app).
-
-## Development
+Terminal 1 (Pocket Node):
 
 ```bash
-git clone https://github.com/pocket-agent/pocket-agent-api-app.git
-cd pocket-agent-api-app
-npm install && npm run dev
+cd ../pocket-agent && source .venv/bin/activate && pocket-agent serve
 ```
 
-See [INSTRUCTIONS.md](INSTRUCTIONS.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+## Scripts
 
-## Documentation
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Vite + Cloudflare worker (port 5173) |
+| `bun run build` | Production SPA + worker bundle |
+| `bun run deploy` | Build and `wrangler deploy` |
+| `bun run typecheck` | TypeScript check (app + worker) |
 
-| Doc | Description |
-|-----|-------------|
-| [INSTRUCTIONS.md](INSTRUCTIONS.md) | Worker scope |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Cloudflare deploy |
-| [CHANGELOG.md](CHANGELOG.md) | Release history |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing |
+## Environment
 
-## Contributing
+| File | Purpose |
+|------|---------|
+| `.env.local` | Vite — `VITE_AUTH_MODE`, `VITE_GOOGLE_CLIENT_ID` |
+| `.dev.vars` | Wrangler — `AUTH_MODE`, `GOOGLE_CLIENT_ID`, `POCKET_NODE_URL` |
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+All-local dev uses `AUTH_MODE=none` (no Google sign-in). Set `POCKET_NODE_URL=http://127.0.0.1:8787`.
 
-## License
+## Deploy
 
-Pocket Agent API is released under the [MIT License](LICENSE).
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Set production secrets:
+
+```bash
+wrangler secret put GOOGLE_CLIENT_ID --env production
+wrangler secret put POCKET_NODE_URL --env production
+wrangler secret put ALLOWED_ORIGINS --env production
+```
+
+## Related repos
+
+| Repo | Role |
+|------|------|
+| [pocket-agent](https://github.com/pocket-agent/pocket-agent) | Pocket Node (Python) |
+| [pocket-agent-sdk](https://github.com/pocket-agent/pocket-agent-sdk) | Shared contracts |
+| [pocket-agent-wizard](https://github.com/pocket-agent/pocket-agent-wizard) | Workspace setup UI |
+
+> **Note:** `pocket-agent-web-app` and `pocket-agent-api-app` were merged into this repo.
